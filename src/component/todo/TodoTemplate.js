@@ -3,12 +3,11 @@ import TodoHeader from './TodoHeader'
 import TodoMain from './TodoMain'
 import TodoInput from './TodoInput'
 
-
 import './scss/TodoTemplate.scss';
-import { API_BASE_URL as BASE, TODO } from '../config/host-config';
+
+import { API_BASE_URL as BASE, TODO } from '../../config/host-config';
 
 const TodoTemplate = () => {
-
 
     // 서버에 할일 목록(json)을 요청해서 받아와야 함
     const API_BASE_URL = BASE + TODO;
@@ -64,9 +63,7 @@ const TodoTemplate = () => {
       .then(json => {
         setTodos(json.todos);
       });
-
     };
-
 
     // 할 일 체크 처리 함수
     const checkTodo = (id, done) => {
