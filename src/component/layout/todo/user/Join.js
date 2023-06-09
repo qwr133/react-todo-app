@@ -10,10 +10,12 @@ import React, {
     Typography,
     Link
   } from "@mui/material";
-
   
+  import {API_BASE_URL as BASE, USER } from '../../config/host-config';
   
   const Join = () => {
+  
+    const API_BASE_URL = BASE + USER;
   
     // 상태변수로 회원가입 입력값 관리
     const [userValue, setUserValue] = useState({
@@ -96,20 +98,70 @@ import React, {
   
     };
   
+    // 이메일 중복체크 서버 통신 함수
+    const fetchDuplicateCheck = async (email) => {
+  
+      const res = await fetch(`${API_BASE_URL}/check?email=${email}`);
+  
+      let msg = '', flag = false;
+      if (res.status === 200) {
+        const json = await res.json();
+        console.log(json);
+        if (json) {
+          msg = '이메일이 중복되었습니다!';
+          flag = false;
+        } else {
+          msg = '사용 가능한 이메일입니다.';
+          flag = true;
+        }
+      } else {
+        alert('서버 통신이 원활하지 않습니다!');
+      }
+  
+      setUserValue({...userValue, email: email });
+      setMessage({...message, email: msg });
+      setCorrect({...correct, email: flag });
+        
+    };
+  
     // 이메일 입력창 체인지 이벤트 핸들러
     const emailHandler = e => {
   
       const inputVal = e.target.value;
   
-      setUserValue({
-        ...userValue,
-        email: inputVal
+      const emailRegex = /^[a-z0-9\.\-_]+@([a-z0-9\-]+\.)+[a-z]{2,6}$/;
+  
+      let msg, flag;
+      if (!inputVal) {
+          msg = '이메일은 필수값입니다!';
+          flag = false;
+      } else if (!emailRegex.test(inputVal)) {
+          msg = '이메일 형식이 아닙니다!';
+          flag = false;
+      } else {
+          // 이메일 중복체크
+          fetchDuplicateCheck(inputVal);
+          return;
+      }
+  
+      saveInputState({
+        key: 'email',
+        inputVal,
+        msg,
+        flag
       });
   
     };
   
     // 패스워드 입력창 체인지 이벤트 핸들러
     const passwordHandler = e => {
+  
+      // 패스워드가 변동되면 확인란을 비우기
+      document.getElementById('password-check').value = '';
+      document.getElementById('check-span').textContent = '';
+  
+      setMessage({...message, passwordCheck: ''});
+      setCorrect({...correct, passwordCheck: false});
   
       const inputVal = e.target.value;
   
@@ -149,7 +201,7 @@ import React, {
         flag = false;
       } else {
         msg = '패스워드가 일치합니다.';
-        flag = false;
+        flag = true;
       }
   
       saveInputState({
@@ -161,12 +213,42 @@ import React, {
   
     };
   
-  
-  
+  //4개의 입력칸이 모두 검증ㅇ에 통과했는 여부를 검사 
+  const isValid= () =>{
+    for(const key in correct){
+        const flag=correct[key];
+        if(!flag) return false;
+
+    }
+    return true;
+
+  };
+
+//회원가입 처리 서버 요청
+const fetchSignUpPost = async => {
+    const res = await fetch(API_BASE_URL){
+        method: 'POST',
+        headers: { 'content-type' : 'application/json'},
+        body: JSON.stringify(userName)
+    };
+    if(res.status===200){
+        alert('회원가입에 성공');
+    }else {
+        alert('서버와의 통신이 원활하지 않습니다')
+    }
+}
+
+  //회원가입 버튼 클릭 이벤트 핸들러
     const joinButtonClickHandler = e => {
   
       e.preventDefault();
-  
+        //회원가입 서버 요청
+        if(isValid()){
+            fetchSignUpPost();
+            alert('회원가입 정보를 서버에 전송합니다')
+        }else {
+            alert('입력란을 다시 확인해주세영';)
+        }
       console.log(userValue);
     };
   
@@ -215,7 +297,11 @@ import React, {
                           autoComplete="email"
                           onChange={emailHandler}
                       />
-                      <span></span>
+                      <span style={
+                        correct.email
+                        ?{color:'green'}
+                        : {color:'red'}
+                      }>{message.email}</span>
                   </Grid>
                   <Grid item xs={12}>
                       <TextField
@@ -248,7 +334,7 @@ import React, {
                           autoComplete="check-password"
                           onChange={pwCheckHandler}                
                       />
-                      <span style={
+                      <span id='check-span' style={
                         correct.passwordCheck
                         ?{color:'green'}
                         : {color:'red'}
